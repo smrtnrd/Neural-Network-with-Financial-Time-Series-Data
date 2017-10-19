@@ -1,0 +1,7 @@
+nationwide
+central
+eastern
+kaoping
+northern
+southern
+taipei
