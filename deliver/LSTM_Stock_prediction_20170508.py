@@ -1,131 +1,95 @@
 
 # coding: utf-8
 
-# ### ILI activiy prediction from Lat, Long
+# # Stock value prediction from Open, High, Low
 
 # # Import module
 
-# In[2]:
+# In[1]:
 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.pyplot as plt2
-
 import pandas as pd
 from pandas import datetime
-
 import math, time
-from math import sqrt
-
 import itertools
-import sklearn
-
 from sklearn import preprocessing
+import datetime
 from sklearn.metrics import mean_squared_error
-from sklearn.externals.joblib import Memory
-memory = Memory(cachedir='/tmp', verbose=0)
-
-
-
-import keras
+from math import sqrt
 from keras.models import Sequential
 from keras.layers.core import Dense, Dropout, Activation
 from keras.layers.recurrent import LSTM
 from keras.models import load_model
-
+import keras
+import pandas_datareader.data as web
 import h5py
 
 
 # # Input parameters 
 
-# In[3]:
+# In[2]:
 
-data = 'data/raw.csv'
+stock_name = '^GSPC'
 seq_len = 22
-d = 0.2 #decay
-shape = [3, seq_len, 1] # feature, window, output
+d = 0.2
+shape = [4, seq_len, 1] # feature, window, output
 neurons = [128, 128, 32, 1]
 epochs = 300
 
 
 # # 1. Download data and normalize it
-# Data since 2010 to 2015
+# Data since 1950 to today
 
-# In[4]:
+# In[3]:
 
-#TO DO : create a function to preprocess the data
-@memory.cache
-def get_ili_data(data, normalize=True):
-    
-    df = read_csv(data, index_col=3)
-    
-    # manually specify column names
-    df.columns = ['statename','activity_level','activity_level_label','season','weeknumber','Latitude','Longitude']
-    df.index.name = 'date'
-    
-    # convert index to datetime
-    df.index = pd.to_datetime(df.index, format='%b-%d-%Y')
-    
-    # manually remove the feature we don;t want to evaluate 
-    df.drop(['statename', 'season', 'weeknumber','activity_level_label'], axis=1, inplace=True)
+def get_stock_data(stock_name, normalize=True):
+    start = datetime.datetime(1950, 1, 1)
+    end = datetime.date.today()
+    df = web.DataReader(stock_name, "yahoo", start, end)
+    df.drop(['Volume', 'Close'], 1, inplace=True)
     
     if normalize:        
         min_max_scaler = preprocessing.MinMaxScaler()
-        df['activity_level'] = min_max_scaler.fit_transform(df.activity_level.values.reshape(-1,1))
-        df['Latitude'] = min_max_scaler.fit_transform(df.Latitude.values.reshape(-1,1))
-        df['Longitude'] = min_max_scaler.fit_transform(df.Longitude.values.reshape(-1,1))
+        df['Open'] = min_max_scaler.fit_transform(df.Open.values.reshape(-1,1))
+        df['High'] = min_max_scaler.fit_transform(df.High.values.reshape(-1,1))
+        df['Low'] = min_max_scaler.fit_transform(df.Low.values.reshape(-1,1))
+        df['Adj Close'] = min_max_scaler.fit_transform(df['Adj Close'].values.reshape(-1,1))
     return df
 
 
-# In[5]:
+# In[4]:
 
-df = get_ili_data(data, normalize=True)
+df = get_stock_data(stock_name, normalize=True)
 # summarize first 5 rows
 print(df.head(5))
 
 
 # # 2. Plot out the Normalized Adjusted close price
 
-# In[ ]:
+# In[5]:
 
-def plot_ili(data):
-    df = get_ili_data(data, normalize=True)
+def plot_stock(stock_name):
+    df = get_stock_data(stock_name, normalize=True)
     print(df.head())
-    plt.plot(df['activity_level'].values, color='red', label='ILI activity')
+    plt.plot(df['Adj Close'], color='red', label='Adj Close')
     plt.legend(loc='best')
     plt.show()
-    
-def plot_ili_group(data):
-    df = get_ili_data(data, normalize=False)
-    print(df.head())
-    values = df.values
-    # specify columns to plot
-    groups = [0,1,2]
-    i = 1
-    # plot each column
-    plt.figure()
-    for group in groups:
-        plt.subplot(len(groups), 1, i)
-        plt.plot(values[:, group])
-        plt.title(df.columns[group], y=0.5, loc='right')
-        plt.legend(loc='best')
-        i += 1
-    plt.show()
 
 
-# In[ ]:
+# In[6]:
 
-plot_ili(data)
-# plot_ili_group(data)
+plot_stock(stock_name)
 
 
 # # 3. Set last day Adjusted Close as y
 
-# In[ ]:
+# In[7]:
 
-def load_data(ili_data, seq_len):
-    amount_of_features = len(ili_data.columns)
-    data = ili_data.as_matrix() 
+def load_data(stock, seq_len):
+    amount_of_features = len(stock.columns)
+    data = stock.as_matrix() 
     sequence_length = seq_len + 1 # index starting from 0
     result = []
     
@@ -148,24 +112,24 @@ def load_data(ili_data, seq_len):
     return [X_train, y_train, X_test, y_test]
 
 
-# In[ ]:
+# In[8]:
 
 X_train, y_train, X_test, y_test = load_data(df, seq_len)
 
 
-# In[ ]:
+# In[9]:
 
 X_train.shape[0], X_train.shape[1], X_train.shape[2]
 
 
-# In[5]:
+# In[10]:
 
 y_train.shape[0]
 
 
 # # 4. Buidling neural network
 
-# In[44]:
+# In[11]:
 
 def build_model2(layers, neurons, d):
     model = Sequential()
@@ -187,13 +151,13 @@ def build_model2(layers, neurons, d):
 
 # # 6. Model Execution
 
-# In[45]:
+# In[ ]:
 
 model = build_model2(shape, neurons, d)
-# layers = [3, 22, 1]
+# layers = [4, 22, 1]
 
 
-# In[46]:
+# In[ ]:
 
 model.fit(
     X_train,
@@ -206,7 +170,7 @@ model.fit(
 
 # # 7. Result on training set and testing set
 
-# In[52]:
+# In[ ]:
 
 def model_score(model, X_train, y_train, X_test, y_test):
     trainScore = model.evaluate(X_train, y_train, verbose=0)
@@ -217,14 +181,14 @@ def model_score(model, X_train, y_train, X_test, y_test):
     return trainScore[0], testScore[0]
 
 
-# In[53]:
+# In[ ]:
 
 model_score(model, X_train, y_train, X_test, y_test)
 
 
 # # 8. Prediction vs Real results
 
-# In[54]:
+# In[ ]:
 
 def percentage_difference(model, X_test, y_test):
     percentage_diff=[]
@@ -237,21 +201,21 @@ def percentage_difference(model, X_test, y_test):
     return p
 
 
-# In[55]:
+# In[ ]:
 
 p = percentage_difference(model, X_test, y_test)
 
 
 # # 9. Plot out prediction
 
-# In[56]:
+# In[ ]:
 
-def denormalize(data, normalized_value):
+def denormalize(stock_name, normalized_value):
     start = datetime.datetime(2000, 1, 1)
     end = datetime.date.today()
-    df = read_csv(data, index_col=3)
+    df = web.DataReader(stock_name, "yahoo", start, end)
     
-    df = df['activity_level'].values.reshape(-1,1)
+    df = df['Adj Close'].values.reshape(-1,1)
     normalized_value = normalized_value.reshape(-1,1)
     
     #return df.shape, p.shape
@@ -261,23 +225,23 @@ def denormalize(data, normalized_value):
     return new
 
 
-# In[57]:
+# In[ ]:
 
-def plot_result(data, normalized_value_p, normalized_value_y_test):
-    newp = denormalize(data, normalized_value_p)
-    newy_test = denormalize(data, normalized_value_y_test)
+def plot_result(stock_name, normalized_value_p, normalized_value_y_test):
+    newp = denormalize(stock_name, normalized_value_p)
+    newy_test = denormalize(stock_name, normalized_value_y_test)
     plt2.plot(newp, color='red', label='Prediction')
     plt2.plot(newy_test,color='blue', label='Actual')
     plt2.legend(loc='best')
-    plt2.title('The test result for {}'.format('ILI activity'))
+    plt2.title('The test result for {}'.format(stock_name))
     plt2.xlabel('Days')
-    plt2.ylabel('Activity_level')
+    plt2.ylabel('Adjusted Close')
     plt2.show()
 
 
-# In[59]:
+# In[ ]:
 
-plot_result(data, p, y_test)
+plot_result(stock_name, p, y_test)
 
 
 # # 10. Save for consistency
@@ -315,7 +279,7 @@ def quick_measure(stock_name, seq_len, d, shape, neurons, epochs):
 
 # 12.1 Optimial Dropout value
 
-# In[23]:
+# In[ ]:
 
 dlist = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
 neurons_LSTM = [32, 64, 128, 256, 512, 1024, 2048]
@@ -326,7 +290,7 @@ for d in dlist:
     dropout_result[d] = testScore
 
 
-# In[24]:
+# In[ ]:
 
 min_val = min(dropout_result.values())
 min_val_key = [k for k, v in dropout_result.items() if v == min_val]
@@ -334,7 +298,7 @@ print (dropout_result)
 print (min_val_key)
 
 
-# In[34]:
+# In[ ]:
 
 lists = sorted(dropout_result.items())
 x,y = zip(*lists)
@@ -347,7 +311,7 @@ plt.show()
 
 # 12.2 Optimial epochs value
 
-# In[29]:
+# In[ ]:
 
 stock_name = '^GSPC'
 seq_len = 22
@@ -356,7 +320,7 @@ neurons = [128, 128, 32, 1]
 epochslist = [10,20,30,40,50,60,70,80,90,100]
 
 
-# In[30]:
+# In[ ]:
 
 epochs_result = {}
 
@@ -365,7 +329,7 @@ for epochs in epochslist:
     epochs_result[epochs] = testScore
 
 
-# In[31]:
+# In[ ]:
 
 lists = sorted(epochs_result.items())
 x,y = zip(*lists)
@@ -378,7 +342,7 @@ plt.show()
 
 # 12.3 Optimal number of neurons
 
-# In[12]:
+# In[ ]:
 
 stock_name = '^GSPC'
 seq_len = 22
@@ -399,7 +363,7 @@ for neuron_lstm in neuronlist1:
         neurons = neurons[:2]    
 
 
-# In[112]:
+# In[ ]:
 
 lists = sorted(neurons_result.items())
 x,y = zip(*lists)
@@ -510,6 +474,11 @@ plt.title('Finding the best hyperparameter')
 plt.xlabel('Days')
 plt.ylabel('Mean Square Error')
 plt.show()
+
+
+# In[ ]:
+
+
 
 
 # In[ ]:
