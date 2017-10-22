@@ -5,14 +5,15 @@
 
 # # Import module
 
-# In[2]:
+# In[6]:
 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.pyplot as plt2
 
 import pandas as pd
-from pandas import datetime
+from pandas import read_csv
+from datetime import datetime
 
 import math, time
 from math import sqrt
@@ -22,6 +23,7 @@ import sklearn
 
 from sklearn import preprocessing
 from sklearn.metrics import mean_squared_error
+
 from sklearn.externals.joblib import Memory
 memory = Memory(cachedir='/tmp', verbose=0)
 
@@ -38,9 +40,9 @@ import h5py
 
 # # Input parameters 
 
-# In[3]:
+# In[13]:
 
-data = 'data/raw.csv'
+data = '../data/raw.csv'
 seq_len = 22
 d = 0.2 #decay
 shape = [3, seq_len, 1] # feature, window, output
@@ -51,7 +53,7 @@ epochs = 300
 # # 1. Download data and normalize it
 # Data since 2010 to 2015
 
-# In[4]:
+# In[14]:
 
 #TO DO : create a function to preprocess the data
 @memory.cache
@@ -77,17 +79,18 @@ def get_ili_data(data, normalize=True):
     return df
 
 
-# In[5]:
+# In[15]:
 
 df = get_ili_data(data, normalize=True)
 # summarize first 5 rows
 print(df.head(5))
 
 
-# # 2. Plot out the Normalized Adjusted close price
+# # 2. Plot out the ILI activity level
 
-# In[ ]:
+# In[28]:
 
+@memory.cache
 def plot_ili(data):
     df = get_ili_data(data, normalize=True)
     print(df.head())
@@ -113,7 +116,7 @@ def plot_ili_group(data):
     plt.show()
 
 
-# In[ ]:
+# In[29]:
 
 plot_ili(data)
 # plot_ili_group(data)
@@ -121,8 +124,9 @@ plot_ili(data)
 
 # # 3. Set last day Adjusted Close as y
 
-# In[ ]:
+# In[30]:
 
+@memory.cache
 def load_data(ili_data, seq_len):
     amount_of_features = len(ili_data.columns)
     data = ili_data.as_matrix() 
@@ -148,25 +152,26 @@ def load_data(ili_data, seq_len):
     return [X_train, y_train, X_test, y_test]
 
 
-# In[ ]:
+# In[31]:
 
 X_train, y_train, X_test, y_test = load_data(df, seq_len)
 
 
-# In[ ]:
+# In[32]:
 
 X_train.shape[0], X_train.shape[1], X_train.shape[2]
 
 
-# In[5]:
+# In[33]:
 
 y_train.shape[0]
 
 
 # # 4. Buidling neural network
 
-# In[44]:
+# In[34]:
 
+@memory.cache
 def build_model2(layers, neurons, d):
     model = Sequential()
     
@@ -187,14 +192,15 @@ def build_model2(layers, neurons, d):
 
 # # 6. Model Execution
 
-# In[45]:
+# In[35]:
 
 model = build_model2(shape, neurons, d)
 # layers = [3, 22, 1]
 
 
-# In[46]:
+# In[36]:
 
+@memory.cache
 model.fit(
     X_train,
     y_train,
@@ -208,6 +214,7 @@ model.fit(
 
 # In[52]:
 
+@memory.cache
 def model_score(model, X_train, y_train, X_test, y_test):
     trainScore = model.evaluate(X_train, y_train, verbose=0)
     print('Train Score: %.5f MSE (%.2f RMSE)' % (trainScore[0], math.sqrt(trainScore[0])))
@@ -226,6 +233,7 @@ model_score(model, X_train, y_train, X_test, y_test)
 
 # In[54]:
 
+@memory.cache
 def percentage_difference(model, X_test, y_test):
     percentage_diff=[]
 

@@ -151,13 +151,13 @@ def build_model2(layers, neurons, d):
 
 # # 6. Model Execution
 
-# In[ ]:
+# In[21]:
 
 model = build_model2(shape, neurons, d)
 # layers = [4, 22, 1]
 
 
-# In[ ]:
+# In[13]:
 
 model.fit(
     X_train,
@@ -170,7 +170,7 @@ model.fit(
 
 # # 7. Result on training set and testing set
 
-# In[ ]:
+# In[14]:
 
 def model_score(model, X_train, y_train, X_test, y_test):
     trainScore = model.evaluate(X_train, y_train, verbose=0)
@@ -181,14 +181,14 @@ def model_score(model, X_train, y_train, X_test, y_test):
     return trainScore[0], testScore[0]
 
 
-# In[ ]:
+# In[15]:
 
 model_score(model, X_train, y_train, X_test, y_test)
 
 
 # # 8. Prediction vs Real results
 
-# In[ ]:
+# In[16]:
 
 def percentage_difference(model, X_test, y_test):
     percentage_diff=[]
@@ -201,14 +201,14 @@ def percentage_difference(model, X_test, y_test):
     return p
 
 
-# In[ ]:
+# In[17]:
 
 p = percentage_difference(model, X_test, y_test)
 
 
 # # 9. Plot out prediction
 
-# In[ ]:
+# In[18]:
 
 def denormalize(stock_name, normalized_value):
     start = datetime.datetime(2000, 1, 1)
@@ -225,7 +225,7 @@ def denormalize(stock_name, normalized_value):
     return new
 
 
-# In[ ]:
+# In[19]:
 
 def plot_result(stock_name, normalized_value_p, normalized_value_y_test):
     newp = denormalize(stock_name, normalized_value_p)
@@ -239,7 +239,7 @@ def plot_result(stock_name, normalized_value_p, normalized_value_y_test):
     plt2.show()
 
 
-# In[ ]:
+# In[20]:
 
 plot_result(stock_name, p, y_test)
 
