@@ -6,4 +6,4 @@
 #$ -m be
 #$ -o STD.out
 #$ -e STD.err
-python ./src < input
+./program < input

@@ -50,6 +50,20 @@ def plot_ili_group(df, groups):
         i += 1
     plt.show()
 
+# plot the forecasts in the context of the original dataset
+def plot_forecasts(series, forecasts, n_test):
+	# plot the entire dataset in blue
+	pyplot.plot(series.values)
+	# plot the forecasts in red
+	for i in range(len(forecasts)):
+		off_s = len(series) - n_test + i - 1
+		off_e = off_s + len(forecasts[i]) + 1
+		xaxis = [x for x in range(off_s, off_e)]
+		yaxis = [series.values[off_s]] + forecasts[i]
+		pyplot.plot(xaxis, yaxis, color='red')
+	# show the plot
+	pyplot.show()
+
 def plot_result(df, normalized_value_p, normalized_value_y_test):
     newp = denormalize(df, normalized_value_p)
     newy_test = denormalize(df, normalized_value_y_test)
